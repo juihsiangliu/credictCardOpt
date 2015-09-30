@@ -49,36 +49,36 @@ class CredictCardBase
         }
         virtual int getDisCount() = 0;
 
-        void addPreAssignedBill(Bill* b)
+        void addPreAssignBill(Bill* b)
         {
-            m_preAssignedBillList.push_back(b);
+            m_preAssignBillList.push_back(b);
         }
         
-        void addAssignedBill(Bill* b)
+        void addAssignBill(Bill* b)
         {
-            m_assignedBillList.push_back(b);
+            m_assignBillList.push_back(b);
         }
 
-        void clearAssignedBill()
+        void clearAssignBill()
         {
-            m_assignedBillList.clear();
+            m_assignBillList.clear();
         }
 
-        void commitCurrentAssigned()
+        void commitCurrentAssign()
         {
-            m_bestAssignedBillList.clear();
-            for (size_t i = 0; i < m_preAssignedBillList.size(); i++) {
-                m_bestAssignedBillList.push_back(m_preAssignedBillList[i]);
+            m_bestAssignBillList.clear();
+            for (size_t i = 0; i < m_preAssignBillList.size(); i++) {
+                m_bestAssignBillList.push_back(m_preAssignBillList[i]);
             }
-            for (size_t i = 0; i < m_assignedBillList.size(); i++) {
-                m_bestAssignedBillList.push_back(m_assignedBillList[i]);
+            for (size_t i = 0; i < m_assignBillList.size(); i++) {
+                m_bestAssignBillList.push_back(m_assignBillList[i]);
             }
         }
 
         void dumpBestAssign()
         {
-            for (size_t i = 0; i < m_bestAssignedBillList.size(); i++) {
-                m_bestAssignedBillList[i]->info();
+            for (size_t i = 0; i < m_bestAssignBillList.size(); i++) {
+                m_bestAssignBillList[i]->info();
             }
         }
     protected:
@@ -86,19 +86,19 @@ class CredictCardBase
         void _getMergeList(vector<Bill*>& mergeList)
         {
             mergeList.clear();
-            for (size_t i = 0; i < m_preAssignedBillList.size(); i++) {
-                mergeList.push_back(m_preAssignedBillList[i]);
+            for (size_t i = 0; i < m_preAssignBillList.size(); i++) {
+                mergeList.push_back(m_preAssignBillList[i]);
             }
-            for (size_t i = 0; i < m_assignedBillList.size(); i++) {
-                mergeList.push_back(m_assignedBillList[i]);
+            for (size_t i = 0; i < m_assignBillList.size(); i++) {
+                mergeList.push_back(m_assignBillList[i]);
             }
         }
 
         int m_dueDate;
         int m_maxDisCount;
-        vector<Bill*> m_preAssignedBillList;
-        vector<Bill*> m_assignedBillList;
-        vector<Bill*> m_bestAssignedBillList;
+        vector<Bill*> m_preAssignBillList;
+        vector<Bill*> m_assignBillList;
+        vector<Bill*> m_bestAssignBillList;
 };
 
 
@@ -238,7 +238,7 @@ void CredictCardMgr::addBill(Bill *b, CredictCardBase *card)
     else {
         for (size_t i = 0; i < m_credictCardList.size(); i++) {
             if (m_credictCardList[i] == card) {
-                m_credictCardList[i]->addPreAssignedBill(b);
+                m_credictCardList[i]->addPreAssignBill(b);
                 return;
             }
         }
@@ -258,12 +258,12 @@ void CredictCardMgr::assignCard()
     size_t maxIter = pow(2,m_billList.size());
     for (size_t iter = 0; iter < maxIter ; iter++) {
         for (size_t i = 0; i < m_credictCardList.size(); i++) {
-            m_credictCardList[i]->clearAssignedBill();
+            m_credictCardList[i]->clearAssignBill();
         }
         for (size_t i = 0; i < m_billList.size(); i++) {
 
             int randIdx = rand() % m_credictCardList.size();
-            m_credictCardList[randIdx]->addAssignedBill(m_billList[i]);
+            m_credictCardList[randIdx]->addAssignBill(m_billList[i]);
         }
         int totalDisCount = 0;
         for (size_t i = 0; i < m_credictCardList.size(); i++) {
@@ -272,7 +272,7 @@ void CredictCardMgr::assignCard()
         if (totalDisCount > m_maxDisCount) {
             m_maxDisCount = totalDisCount;
             for (size_t i = 0; i < m_credictCardList.size(); i++) {
-                m_credictCardList[i]->commitCurrentAssigned();
+                m_credictCardList[i]->commitCurrentAssign();
             }
         }
     }
@@ -288,8 +288,8 @@ void CredictCardMgr::assignCard()
 
 int main()
 {
-    CredictCardBase *hnCard = new CredictCardHN;
-    CredictCardBase *ysCard = new CredictCardYS;
+    CredictCardHN hnCard;
+    CredictCardYS ysCard;
 
     Bill b1(2015, 9, 23, 800, normal);
     Bill b2(2015, 9, 25, 1500, normal);
@@ -313,8 +313,8 @@ int main()
     Bill d1(2015, 9, 20, 1000, network);
 
     CredictCardMgr cardMgr;
-    cardMgr.addCard(hnCard);
-    cardMgr.addCard(ysCard);
+    cardMgr.addCard(&hnCard);
+    cardMgr.addCard(&ysCard);
     
 #if 0
     cardMgr.addBill(&a1, hnCard);
@@ -334,7 +334,7 @@ int main()
     hnCard->getDisCount();
     ysCard->getDisCount();
 #else
-    cardMgr.addBill(&a1, hnCard);
+    cardMgr.addBill(&a1, &hnCard);
     cardMgr.addBill(&a2, NULL);
     cardMgr.addBill(&a3, NULL);
     cardMgr.addBill(&a4, NULL);
@@ -344,16 +344,14 @@ int main()
     cardMgr.addBill(&c2, NULL);
     cardMgr.addBill(&c3, NULL);
     cardMgr.addBill(&c4, NULL);
-    cardMgr.addBill(&c5, ysCard);
-    cardMgr.addBill(&c6, ysCard);
+    cardMgr.addBill(&c5, &ysCard);
+    cardMgr.addBill(&c6, &ysCard);
     cardMgr.addBill(&c7, NULL);
     
     cardMgr.addBill(&d1, NULL);
 
     cardMgr.assignCard();
 #endif
-    delete hnCard;
-    delete ysCard;
 
     return 0;
 }
