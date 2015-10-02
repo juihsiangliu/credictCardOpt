@@ -142,16 +142,15 @@ int CredictCardHN::getDisCount()
     vector<Bill*> tmpList;
     _getMergeList(tmpList);
 
-    double disCount = 0;
-    int sum = 0;
+    int normalSum = 0;
     const int cnt888 = 5;
     double sum888DisCount = 0;
     double list888[cnt888];
     int idx = 0;
-    int th = 12000;
+    const int th = 12000;
     for (size_t i = 0; i < tmpList.size(); i++) {
         int val = tmpList[i]->getAmount();
-        sum += val;
+        normalSum += val;
         // for special event
         const double maxEach = 100;
         const double maxTotal = 500;
@@ -169,9 +168,6 @@ int CredictCardHN::getDisCount()
                     n = maxEach;
                 }
                 sum888DisCount += n;
-                if (sum888DisCount > maxTotal) {
-                    sum888DisCount = maxTotal;
-                }
             }
             else {
                 // check if subtotal > th
@@ -182,27 +178,33 @@ int CredictCardHN::getDisCount()
                 double n = 0;
                 if (subtotal >= th) {
                     n += 0.007 * subtotal;
+                    if (n > maxEach) {
+                        n = maxEach;
+                    }
                     for (size_t j = 0; j < idx; j++) {
                         list888[j] = 0;
                     }
                     idx = 0;
                 }
                 sum888DisCount += n;
-                if (sum888DisCount > maxTotal) {
-                    sum888DisCount = maxTotal;
-                }
             }
         }
         else if (val >= th) {
-            sum888DisCount += 0.007 * val;
+            double n = 0.007 * val;
+            if (n > maxEach) {
+                n = maxEach;
+            }
+            sum888DisCount += n;
         }
     
         if (sum888DisCount > maxTotal) {
             sum888DisCount = maxTotal;
         }
     }
+    
+    double disCount = 0;
     disCount += sum888DisCount;
-    disCount += 0.008 * sum;
+    disCount += 0.008 * normalSum;
 
     //   printf("disCount of hn = %g\n", disCount);
 
