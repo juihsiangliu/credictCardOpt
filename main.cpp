@@ -14,7 +14,7 @@ class Bill
 {
     public:
         Bill(int p_year, int p_month, int p_day, int p_amount, enum BillType p_type, const char* p_comment = NULL)
-        :m_year(p_year), m_month(p_month), m_day(p_day), m_amount(p_amount), m_type(p_type)
+            :m_year(p_year), m_month(p_month), m_day(p_day), m_amount(p_amount), m_type(p_type)
         {
             memset(m_comment, 0, 1024);
             if (p_comment == NULL) {
@@ -31,7 +31,7 @@ class Bill
         void info()
         {
             printf("year = %d, month = %d, day = %d, amount = %d, type = %d, comment = %s\n",
-                m_year, m_month, m_day, m_amount, m_type, m_comment);
+                    m_year, m_month, m_day, m_amount, m_type, m_comment);
         }
     private:
         int m_year;
@@ -47,7 +47,7 @@ class CredictCardBase
 {
     public:
         CredictCardBase(const char* p_name, int p_dueDate = 1)
-        : m_dueDate(p_dueDate), m_maxDisCount(0)
+            : m_dueDate(p_dueDate), m_commitDisCount(0)
         {
             memset(m_name, 0, 1024);
             if (p_name == NULL) {
@@ -61,17 +61,13 @@ class CredictCardBase
         virtual ~CredictCardBase()
         {}
 
-        int getMaxDisCount()
-        {
-            return m_maxDisCount;
-        }
         virtual int getDisCount() = 0;
 
         void addPreAssignBill(Bill* b)
         {
             m_preAssignBillList.push_back(b);
         }
-        
+
         void addAssignBill(Bill* b)
         {
             m_assignBillList.push_back(b);
@@ -82,6 +78,10 @@ class CredictCardBase
             m_assignBillList.clear();
         }
 
+        int getDisCountForCommit() 
+        {
+            return m_commitDisCount;
+        }
         void commitCurrentAssign()
         {
             m_bestAssignBillList.clear();
@@ -91,11 +91,13 @@ class CredictCardBase
             for (size_t i = 0; i < m_assignBillList.size(); i++) {
                 m_bestAssignBillList.push_back(m_assignBillList[i]);
             }
+            m_commitDisCount = getDisCount();
         }
 
         void dumpBestAssign()
         {
             printf("credict card = %s\n", m_name);
+            printf("disCount = %d\n", getDisCountForCommit());
             for (size_t i = 0; i < m_bestAssignBillList.size(); i++) {
                 m_bestAssignBillList[i]->info();
             }
@@ -114,7 +116,8 @@ class CredictCardBase
         }
 
         int m_dueDate;
-        int m_maxDisCount;
+        int m_commitDisCount;
+        
         vector<Bill*> m_preAssignBillList;
         vector<Bill*> m_assignBillList;
         vector<Bill*> m_bestAssignBillList;
@@ -128,7 +131,7 @@ class CredictCardHN : public CredictCardBase
 {
     public:
         CredictCardHN(const char* p_name)
-        : CredictCardBase(p_name)
+            : CredictCardBase(p_name)
         {}
         int getDisCount();
 };
@@ -139,28 +142,71 @@ int CredictCardHN::getDisCount()
     vector<Bill*> tmpList;
     _getMergeList(tmpList);
 
-    double disCount = 0;
-    int sum = 0;
+    int normalSum = 0;
     const int cnt888 = 5;
+    double sum888DisCount = 0;
     double list888[cnt888];
     int idx = 0;
+    const int th = 12000;
     for (size_t i = 0; i < tmpList.size(); i++) {
         int val = tmpList[i]->getAmount();
-        sum += val;
-        if (val >= 888) {
+        normalSum += val;
+        // for special event
+        const double maxEach = 100;
+        const double maxTotal = 500;
+        if (val >= 888 && val < th) {
             list888[idx] = val;
             idx++;
             if (idx == cnt888) {
                 idx = 0;
+                double n = 0;
                 for (size_t j = 0; j < cnt888; j++) {
-                    disCount += 0.007 * list888[idx];
+                    n += 0.007 * list888[j];
+                    list888[j] = 0;
                 }
+                if (n > maxEach) {
+                    n = maxEach;
+                }
+                sum888DisCount += n;
+            }
+            else {
+                // check if subtotal > th
+                double subtotal = 0;
+                for (size_t j = 0; j < idx; j++) {
+                    subtotal += list888[j];
+                }
+                double n = 0;
+                if (subtotal >= th) {
+                    n += 0.007 * subtotal;
+                    if (n > maxEach) {
+                        n = maxEach;
+                    }
+                    for (size_t j = 0; j < idx; j++) {
+                        list888[j] = 0;
+                    }
+                    idx = 0;
+                }
+                sum888DisCount += n;
             }
         }
+        else if (val >= th) {
+            double n = 0.007 * val;
+            if (n > maxEach) {
+                n = maxEach;
+            }
+            sum888DisCount += n;
+        }
+    
+        if (sum888DisCount > maxTotal) {
+            sum888DisCount = maxTotal;
+        }
     }
-    disCount += 0.008 * sum;
+    
+    double disCount = 0;
+    disCount += sum888DisCount;
+    disCount += 0.008 * normalSum;
 
- //   printf("disCount of hn = %g\n", disCount);
+    //   printf("disCount of hn = %g\n", disCount);
 
     return (int) disCount;
 }
@@ -170,7 +216,7 @@ class CredictCardYS : public CredictCardBase
 {
     public:
         CredictCardYS(const char* p_name)
-        : CredictCardBase(p_name)
+            : CredictCardBase(p_name)
         {}
         int getDisCount();
     protected:
@@ -219,7 +265,7 @@ int CredictCardYS::getDisCount()
             netDisCount = 300;
         }
     }
-    
+
     double normalDisCount = 0;
     for (size_t i = 0; i < tmpList.size(); i++) {
         if (tmpList[i]->getType() == oil) {
@@ -228,19 +274,44 @@ int CredictCardYS::getDisCount()
         normalDisCount += tmpList[i]->getAmount();
     }
     normalDisCount = 0.007 * normalDisCount;
-//    printf("disCount of ys= %g (normal = %g, icash = %g, net = %g)\n", 
-//        normalDisCount + icashDisCount + netDisCount,
-//        normalDisCount, icashDisCount, netDisCount);
-    return normalDisCount + icashDisCount + netDisCount;
+//        printf("disCount of ys= %g (normal = %g, icash = %g, net = %g)\n", 
+//            normalDisCount + icashDisCount + netDisCount,
+//            normalDisCount, icashDisCount, netDisCount);
+    return (int) (normalDisCount + icashDisCount + netDisCount);
 }
 
+
+class CredictCardHNICash : public CredictCardBase
+{
+    public:
+        CredictCardHNICash(const char* p_name)
+            : CredictCardBase(p_name)
+        {}
+        int getDisCount();
+};
+
+
+int CredictCardHNICash::getDisCount()
+{
+    vector<Bill*> tmpList;
+    _getMergeList(tmpList);
+    double sum = 0;
+    for (size_t i = 0; i < tmpList.size(); i++) {
+        if (tmpList[i]->getType() != network) {
+            continue;
+        }
+        sum += tmpList[i]->getAmount();
+    }
+    
+    return (int) (0.025 * sum);
+}
 
 
 class CredictCardMgr
 {
     public:
         CredictCardMgr()
-        : m_maxDisCount(0)
+            : m_maxDisCount(0)
         {
             srand(0);
         }
@@ -279,8 +350,8 @@ void CredictCardMgr::addCard(CredictCardBase *card)
 
 void CredictCardMgr::assignCard()
 {
-    size_t maxIter = 2 * pow(m_credictCardList.size(), m_billList.size());
-//    printf("maxIter = %d (base = %d, exp = %d)\n", maxIter, m_credictCardList.size(), m_billList.size());
+    size_t maxIter = (size_t) (2 * pow(m_credictCardList.size(), m_billList.size()));
+    //    printf("maxIter = %d (base = %d, exp = %d)\n", maxIter, m_credictCardList.size(), m_billList.size());
 
     for (size_t iter = 0; iter < maxIter ; iter++) {
         for (size_t i = 0; i < m_credictCardList.size(); i++) {
@@ -303,7 +374,7 @@ void CredictCardMgr::assignCard()
         }
     }
     printf("max disCount = %d\n", m_maxDisCount);
-        
+
     printf("==================================\n");
     for (size_t i = 0; i < m_credictCardList.size(); i++) {
         m_credictCardList[i]->dumpBestAssign();
@@ -315,25 +386,27 @@ void CredictCardMgr::assignCard()
 
 int main()
 {
+    CredictCardMgr cardMgr;
+    
     CredictCardHN hnCard("hnCard");
+//    CredictCardHNICash hnICashCard("hnICashCard");
     CredictCardYS ysCard("ys icash");
 
-
-    Bill a1(2015, 9, 25, 1300, network, "pchome");
-    Bill a2(2015, 9, 24, 510, normal, "baby1");
-    Bill a3(2015, 9, 25, 853, normal, "baby2");
-    
-    Bill a4(2015, 9, 18, 500, icash, "regular icash");
-    Bill a5(2015, 9, 19, 1000, oil, "regular oil1");
-    Bill a6(2015, 9, 19, 1000, oil, "regular oil2");
-    Bill a7(2015, 9, 19, 1000, oil, "regular oil3");
-    Bill a8(2015, 9, 19, 1000, oil, "regular oil4");
-    
-
-    CredictCardMgr cardMgr;
     cardMgr.addCard(&hnCard);
+//    cardMgr.addCard(&hnICashCard);
     cardMgr.addCard(&ysCard);
-    
+
+    Bill a1(2015, 9, 20, 500, icash, "regular icash");
+    Bill a2(2015, 9, 25, 1317, network, "pchome");
+    Bill a3(2015, 9, 30, 528, normal, "baby1");
+    Bill a4(2015, 9, 30, 853, normal, "baby2");
+    Bill a5(2015, 9, 100, 1000, oil, "regular oil1");
+    Bill a6(2015, 9, 100, 1000, oil, "regular oil2");
+    Bill a7(2015, 9, 100, 1000, oil, "regular oil3");
+    Bill a8(2015, 9, 100, 1000, oil, "regular oil4");
+    Bill a9(2015, 9, 100, 1490, network, "baby3");
+    Bill a0(2015, 9, 100, 25000, network, "iphone");
+
     cardMgr.addBill(&a1, &ysCard);
     cardMgr.addBill(&a2, &ysCard);
     cardMgr.addBill(&a3, &ysCard);
@@ -342,6 +415,8 @@ int main()
     cardMgr.addBill(&a6, NULL);
     cardMgr.addBill(&a7, NULL);
     cardMgr.addBill(&a8, NULL);
+    cardMgr.addBill(&a9, NULL);
+    cardMgr.addBill(&a0, NULL);
 
     cardMgr.assignCard();
 
