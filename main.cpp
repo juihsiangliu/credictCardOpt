@@ -215,8 +215,8 @@ int CredictCardYS::getDisCount()
             icashDisCount = 100;
         }
         netDisCount = 0.05 * netDisCount;
-        if (icashDisCount > 500) {
-            icashDisCount = 500;
+        if (netDisCount > 300) {
+            netDisCount = 300;
         }
     }
     
