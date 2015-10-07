@@ -160,7 +160,7 @@ int CredictCardHN::getDisCount()
             if (idx == cnt888) {
                 idx = 0;
                 double n = 0;
-                for (size_t j = 0; j < cnt888; j++) {
+                for (int j = 0; j < cnt888; j++) {
                     n += 0.007 * list888[j];
                     list888[j] = 0;
                 }
@@ -172,7 +172,7 @@ int CredictCardHN::getDisCount()
             else {
                 // check if subtotal > th
                 double subtotal = 0;
-                for (size_t j = 0; j < idx; j++) {
+                for (int j = 0; j < idx; j++) {
                     subtotal += list888[j];
                 }
                 double n = 0;
@@ -181,7 +181,7 @@ int CredictCardHN::getDisCount()
                     if (n > maxEach) {
                         n = maxEach;
                     }
-                    for (size_t j = 0; j < idx; j++) {
+                    for (int j = 0; j < idx; j++) {
                         list888[j] = 0;
                     }
                     idx = 0;
@@ -397,28 +397,40 @@ int main()
     cardMgr.addCard(&ysCard);
 
     Bill a1(2015, 9, 20, 500, icash, "regular icash");
-    Bill a2(2015, 9, 25, 1317, network, "pchome");
+    Bill a2(2015, 9, 25, 1317, network, "pchome - normal");
     Bill a3(2015, 9, 30, 528, normal, "baby1");
     Bill a4(2015, 9, 30, 853, normal, "baby2");
-    Bill a5(2015, 9, 100, 1000, oil, "regular oil1");
-    Bill a6(2015, 9, 100, 1000, oil, "regular oil2");
-    Bill a7(2015, 9, 100, 1000, oil, "regular oil3");
-    Bill a8(2015, 9, 100, 1000, oil, "regular oil4");
-    Bill a9(2015, 9, 100, 1490, network, "baby3");
-    Bill a0(2015, 9, 100, 25000, network, "iphone");
+    Bill a5(2015, 10, 4, 1980, normal, "baby-cake");
+    Bill a6(2015, 10, 4, 1200, normal, "birthday dinner");
+    Bill a7(2015, 10, 4, 725, network, "pchome - baby3");
+    Bill a8(2015, 10, 7, 1171, network, "books");
 
+    Bill b1(2015, 10, 100, 1000, oil, "regular oil1");
+//    Bill a8(2015, 9, 100, 2450, network, "iphone");
+
+#if 0
     cardMgr.addBill(&a1, &ysCard);
     cardMgr.addBill(&a2, &ysCard);
     cardMgr.addBill(&a3, &ysCard);
     cardMgr.addBill(&a4, &ysCard);
+    cardMgr.addBill(&a5, &hnCard);
+    cardMgr.addBill(&a6, &ysCard);
+    cardMgr.addBill(&a7, &ysCard);
+    cardMgr.addBill(&a8, &ysCard);
+    cardMgr.addBill(&b1, NULL);
+#else    
+    cardMgr.addBill(&a1, NULL);
+    cardMgr.addBill(&a2, NULL);
+    cardMgr.addBill(&a3, NULL);
+    cardMgr.addBill(&a4, NULL);
     cardMgr.addBill(&a5, NULL);
     cardMgr.addBill(&a6, NULL);
     cardMgr.addBill(&a7, NULL);
     cardMgr.addBill(&a8, NULL);
-    cardMgr.addBill(&a9, NULL);
-    cardMgr.addBill(&a0, NULL);
-
+    cardMgr.addBill(&b1, NULL);
+#endif
     cardMgr.assignCard();
 
     return 0;
 }
+
